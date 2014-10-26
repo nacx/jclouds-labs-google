@@ -50,12 +50,13 @@ public class ParseZones extends ParseJson<ListPage<Zone>> {
 
       @Override
       protected Function<Object, IterableWithMarker<Zone>> fetchNextPage(final String projectName,
-                                                                         final ListOptions options) {
+            final ListOptions options) {
          return new Function<Object, IterableWithMarker<Zone>>() {
 
             @Override
             public IterableWithMarker<Zone> apply(Object input) {
-               return api.getZoneApiForProject(projectName).listAtMarker(input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getZoneApiForProject(projectName).list(options);
             }
          };
       }

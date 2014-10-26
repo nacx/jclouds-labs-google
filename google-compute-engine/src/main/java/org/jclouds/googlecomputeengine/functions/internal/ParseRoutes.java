@@ -55,7 +55,8 @@ public class ParseRoutes extends ParseJson<ListPage<Route>> {
 
             @Override
             public IterableWithMarker<Route> apply(Object input) {
-               return api.getRouteApiForProject(projectName).listAtMarker(input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getRouteApiForProject(projectName).list(options);
             }
          };
       }

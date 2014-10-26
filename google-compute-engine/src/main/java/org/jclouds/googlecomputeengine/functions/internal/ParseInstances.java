@@ -49,15 +49,14 @@ public class ParseInstances extends ParseJson<ListPage<Instance>> {
       }
 
       @Override
-      protected Function<Object, IterableWithMarker<Instance>> fetchNextPage(final String project,
-                                                                             final String zone,
-                                                                             final ListOptions options) {
+      protected Function<Object, IterableWithMarker<Instance>> fetchNextPage(final String project, final String zone,
+            final ListOptions options) {
          return new Function<Object, IterableWithMarker<Instance>>() {
 
             @Override
             public IterableWithMarker<Instance> apply(Object input) {
-               return api.getInstanceApiForProject(project)
-                       .listAtMarkerInZone(zone, input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getInstanceApiForProject(project).listInZone(zone, options);
             }
          };
       }

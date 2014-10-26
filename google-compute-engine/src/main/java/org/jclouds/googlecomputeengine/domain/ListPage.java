@@ -32,7 +32,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 /**
- * The collection returned from any <code>listFirstPage()</code> method.
+ * A single page returned from a paginated list call.
  */
 public class ListPage<T> extends IterableWithMarker<T> {
 

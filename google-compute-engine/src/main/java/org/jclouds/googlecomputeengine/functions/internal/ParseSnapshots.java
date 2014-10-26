@@ -52,13 +52,13 @@ public class ParseSnapshots extends ParseJson<ListPage<Snapshot>> {
 
       @Override
       protected Function<Object, IterableWithMarker<Snapshot>> fetchNextPage(final String projectName,
-                                                                         final ListOptions options) {
+            final ListOptions options) {
          return new Function<Object, IterableWithMarker<Snapshot>>() {
 
             @Override
             public IterableWithMarker<Snapshot> apply(Object input) {
-               return api.getSnapshotApiForProject(projectName)
-                       .listAtMarker(input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getSnapshotApiForProject(projectName).list(options);
             }
          };
       }

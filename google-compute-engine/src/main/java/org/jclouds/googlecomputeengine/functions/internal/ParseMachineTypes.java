@@ -35,7 +35,8 @@ public class ParseMachineTypes extends ParseJson<ListPage<MachineType>> {
 
    @Inject
    public ParseMachineTypes(Json json) {
-      super(json, new TypeLiteral<ListPage<MachineType>>() {});
+      super(json, new TypeLiteral<ListPage<MachineType>>() {
+      });
    }
 
    public static class ToPagedIterable extends BaseWithZoneToPagedIterable<MachineType, ToPagedIterable> {
@@ -49,14 +50,13 @@ public class ParseMachineTypes extends ParseJson<ListPage<MachineType>> {
 
       @Override
       protected Function<Object, IterableWithMarker<MachineType>> fetchNextPage(final String project,
-                                                                                final String zone,
-                                                                                final ListOptions options) {
+            final String zone, final ListOptions options) {
          return new Function<Object, IterableWithMarker<MachineType>>() {
 
             @Override
             public IterableWithMarker<MachineType> apply(Object input) {
-               return api.getMachineTypeApiForProject(project)
-                       .listAtMarkerInZone(zone, input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getMachineTypeApiForProject(project).listInZone(zone, options);
             }
          };
       }

@@ -50,14 +50,13 @@ public class ParseRegionOperations extends ParseJson<ListPage<Operation>> {
 
       @Override
       protected Function<Object, IterableWithMarker<Operation>> fetchNextPage(final String projectName,
-                                                                              final String regionName,
-                                                                              final ListOptions options) {
+            final String regionName, final ListOptions options) {
          return new Function<Object, IterableWithMarker<Operation>>() {
 
             @Override
             public IterableWithMarker<Operation> apply(Object input) {
-               return api.getRegionOperationApiForProject(projectName)
-                       .listAtMarkerInRegion(regionName, input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getRegionOperationApiForProject(projectName).listInRegion(regionName, options);
             }
          };
       }

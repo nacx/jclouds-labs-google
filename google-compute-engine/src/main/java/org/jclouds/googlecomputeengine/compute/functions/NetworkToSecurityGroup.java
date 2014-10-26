@@ -16,6 +16,8 @@
  */
 package org.jclouds.googlecomputeengine.compute.functions;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -26,13 +28,16 @@ import org.jclouds.compute.reference.ComputeServiceConstants;
 import org.jclouds.googlecomputeengine.GoogleComputeEngineApi;
 import org.jclouds.googlecomputeengine.config.UserProject;
 import org.jclouds.googlecomputeengine.domain.Firewall;
+import org.jclouds.googlecomputeengine.domain.ListPage;
 import org.jclouds.googlecomputeengine.domain.Network;
+import org.jclouds.googlecomputeengine.functions.internal.ParseFirewalls;
 import org.jclouds.googlecomputeengine.options.ListOptions;
 import org.jclouds.logging.Logger;
 import org.jclouds.net.domain.IpPermission;
 
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -47,14 +52,17 @@ public class NetworkToSecurityGroup implements Function<Network, SecurityGroup> 
    private final Function<Firewall, Iterable<IpPermission>> firewallToPerms;
    private final GoogleComputeEngineApi api;
    private final Supplier<String> project;
+   private final ParseFirewalls.ToPagedIterable firewallsToPagedIterable;
 
    @Inject
    public NetworkToSecurityGroup(Function<Firewall, Iterable<IpPermission>> firewallToPerms,
                                  GoogleComputeEngineApi api,
-                                 @UserProject Supplier<String> project) {
-      this.firewallToPerms = firewallToPerms;
-      this.api = api;
-      this.project = project;
+                                 @UserProject Supplier<String> project,
+                                 ParseFirewalls.ToPagedIterable firewallsToPagedIterable) {
+      this.firewallToPerms = checkNotNull(firewallToPerms, "firewallToPerms");
+      this.api = checkNotNull(api, "api");
+      this.project = checkNotNull(project, "project");
+      this.firewallsToPagedIterable = checkNotNull(firewallsToPagedIterable, "firewallsToPagedIterable");
    }
 
    @Override
@@ -66,11 +74,13 @@ public class NetworkToSecurityGroup implements Function<Network, SecurityGroup> 
       builder.name(network.getName());
       builder.uri(network.getSelfLink());
 
-      ImmutableSet.Builder permBuilder = ImmutableSet.builder();
+      ImmutableSet.Builder<IpPermission> permBuilder = ImmutableSet.builder();
 
       ListOptions options = new ListOptions.Builder().filter("network eq .*/" + network.getName());
+      ListPage<Firewall> firewallsPage = api.getFirewallApiForProject(project.get()).list(options);
+      FluentIterable<Firewall> fws = firewallsToPagedIterable.apply(firewallsPage).concat();
 
-      for (Firewall fw : api.getFirewallApiForProject(project.get()).list(options).concat()) {
+      for (Firewall fw : fws) {
          permBuilder.addAll(firewallToPerms.apply(fw));
       }
 

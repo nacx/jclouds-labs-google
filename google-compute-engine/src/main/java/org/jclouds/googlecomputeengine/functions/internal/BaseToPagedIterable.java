@@ -41,7 +41,7 @@ public abstract class BaseToPagedIterable<T, I extends BaseToPagedIterable<T, I>
    @Override
    public PagedIterable<T> apply(ListPage<T> input) {
       if (input.nextMarker() == null)
-         return PagedIterables.of(input);
+         return PagedIterables.onlyPage(input);
 
       Optional<Object> project = tryFind(request.getCaller().get().getArgs(), instanceOf(String.class));
 

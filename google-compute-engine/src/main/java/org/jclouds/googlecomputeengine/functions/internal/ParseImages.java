@@ -55,7 +55,8 @@ public class ParseImages extends ParseJson<ListPage<Image>> {
 
             @Override
             public IterableWithMarker<Image> apply(Object input) {
-               return api.getImageApiForProject(projectName).listAtMarker(input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getImageApiForProject(projectName).list(options);
             }
          };
       }

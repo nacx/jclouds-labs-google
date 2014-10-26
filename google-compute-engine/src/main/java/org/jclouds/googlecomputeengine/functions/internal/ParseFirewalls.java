@@ -55,7 +55,8 @@ public class ParseFirewalls extends ParseJson<ListPage<Firewall>> {
 
             @Override
             public IterableWithMarker<Firewall> apply(Object input) {
-               return api.getFirewallApiForProject(projectName).listAtMarker(input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getFirewallApiForProject(projectName).list(options);
             }
          };
       }

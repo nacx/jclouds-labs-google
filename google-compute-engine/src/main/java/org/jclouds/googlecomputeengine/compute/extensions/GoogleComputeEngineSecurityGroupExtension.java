@@ -41,10 +41,12 @@ import org.jclouds.googlecomputeengine.config.UserProject;
 import org.jclouds.googlecomputeengine.domain.Firewall;
 import org.jclouds.googlecomputeengine.domain.Instance;
 import org.jclouds.googlecomputeengine.domain.Instance.NetworkInterface;
+import org.jclouds.googlecomputeengine.domain.ListPage;
 import org.jclouds.googlecomputeengine.domain.Network;
 import org.jclouds.googlecomputeengine.domain.Operation;
 import org.jclouds.googlecomputeengine.domain.SlashEncodedIds;
 import org.jclouds.googlecomputeengine.domain.internal.NetworkAndAddressRange;
+import org.jclouds.googlecomputeengine.functions.internal.ParseFirewalls;
 import org.jclouds.googlecomputeengine.options.FirewallOptions;
 import org.jclouds.googlecomputeengine.options.ListOptions;
 import org.jclouds.googlecomputeengine.options.ListOptions.Builder;
@@ -76,6 +78,7 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
    protected final Predicate<AtomicReference<Operation>> operationDonePredicate;
    protected final long operationCompleteCheckInterval;
    protected final long operationCompleteCheckTimeout;
+   protected final ParseFirewalls.ToPagedIterable firewallsToPagedIterable;
 
    @Inject
    public GoogleComputeEngineSecurityGroupExtension(GoogleComputeEngineApi api,
@@ -85,7 +88,8 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
                                                     Function<Network, SecurityGroup> groupConverter,
                                                     @Named("global") Predicate<AtomicReference<Operation>> operationDonePredicate,
                                                     @Named(OPERATION_COMPLETE_INTERVAL) Long operationCompleteCheckInterval,
-                                                    @Named(OPERATION_COMPLETE_TIMEOUT) Long operationCompleteCheckTimeout) {
+                                                    @Named(OPERATION_COMPLETE_TIMEOUT) Long operationCompleteCheckTimeout,
+                                                    ParseFirewalls.ToPagedIterable firewallsToPagedIterable) {
       this.api = checkNotNull(api, "api");
       this.userProject = checkNotNull(userProject, "userProject");
       this.namingConvention = checkNotNull(namingConvention, "namingConvention");
@@ -96,6 +100,7 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
       this.operationCompleteCheckTimeout = checkNotNull(operationCompleteCheckTimeout,
               "operation completed check timeout");
       this.operationDonePredicate = checkNotNull(operationDonePredicate, "operationDonePredicate");
+      this.firewallsToPagedIterable = checkNotNull(firewallsToPagedIterable, "firewallsToPagedIterable");
    }
 
    @Override
@@ -119,8 +124,7 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
          return ImmutableSet.of();
       }
 
-      ImmutableSet.Builder builder = ImmutableSet.builder();
-
+      ImmutableSet.Builder<SecurityGroup> builder = ImmutableSet.builder();
 
       for (NetworkInterface nwInterface : instance.getNetworkInterfaces()) {
          String networkUrl = nwInterface.getNetwork().getPath();
@@ -171,7 +175,8 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
 
       ListOptions options = new ListOptions.Builder().filter("network eq .*/" + id);
 
-      FluentIterable<Firewall> fws = api.getFirewallApiForProject(userProject.get()).list(options).concat();
+      ListPage<Firewall> firewallPage = api.getFirewallApiForProject(userProject.get()).list(options);
+      FluentIterable<Firewall> fws = firewallsToPagedIterable.apply(firewallPage).concat();
 
       for (Firewall fw : fws) {
          AtomicReference<Operation> operation = Atomics.newReference(api.getFirewallApiForProject(userProject.get())
@@ -203,7 +208,9 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
 
       ListOptions options = new ListOptions.Builder().filter("network eq .*/" + group.getName());
 
-      if (api.getFirewallApiForProject(userProject.get()).list(options).concat().anyMatch(providesIpPermission(ipPermission))) {
+      ListPage<Firewall> firewallsPage = api.getFirewallApiForProject(userProject.get()).list(options);
+      FluentIterable<Firewall> fws = firewallsToPagedIterable.apply(firewallsPage).concat();
+      if (fws.anyMatch(providesIpPermission(ipPermission))) {
          // Permission already exists.
          return group;
       }
@@ -268,7 +275,8 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
 
       ListOptions options = new ListOptions.Builder().filter("network eq .*/" + group.getName());
 
-      FluentIterable<Firewall> fws = api.getFirewallApiForProject(userProject.get()).list(options).concat();
+      ListPage<Firewall> firewallsPage = api.getFirewallApiForProject(userProject.get()).list(options);
+      FluentIterable<Firewall> fws = firewallsToPagedIterable.apply(firewallsPage).concat();
 
       for (Firewall fw : fws) {
          if (equalsIpPermission(ipPermission).apply(fw)) {
@@ -328,7 +336,8 @@ public class GoogleComputeEngineSecurityGroupExtension implements SecurityGroupE
 
    private SecurityGroup groupForTagsInNetwork(Network nw, final Set <String> tags) {
       ListOptions opts = new Builder().filter("network eq .*/" + nw.getName());
-      Set<Firewall> fws = api.getFirewallApiForProject(userProject.get()).list(opts).concat()
+      ListPage<Firewall> firewallsPage = api.getFirewallApiForProject(userProject.get()).list(opts);
+      Set<Firewall> fws = firewallsToPagedIterable.apply(firewallsPage).concat()
               .filter(new Predicate<Firewall>() {
                  @Override
                  public boolean apply(final Firewall input) {

@@ -35,7 +35,8 @@ public class ParseDiskTypes extends ParseJson<ListPage<DiskType>> {
 
    @Inject
    public ParseDiskTypes(Json json) {
-      super(json, new TypeLiteral<ListPage<DiskType>>() {});
+      super(json, new TypeLiteral<ListPage<DiskType>>() {
+      });
    }
 
    public static class ToPagedIterable extends BaseWithZoneToPagedIterable<DiskType, ToPagedIterable> {
@@ -48,15 +49,14 @@ public class ParseDiskTypes extends ParseJson<ListPage<DiskType>> {
       }
 
       @Override
-      protected Function<Object, IterableWithMarker<DiskType>> fetchNextPage(final String project,
-                                                                             final String zone,
-                                                                             final ListOptions options) {
+      protected Function<Object, IterableWithMarker<DiskType>> fetchNextPage(final String project, final String zone,
+            final ListOptions options) {
          return new Function<Object, IterableWithMarker<DiskType>>() {
 
             @Override
             public IterableWithMarker<DiskType> apply(Object input) {
-               return api.getDiskTypeApiForProject(project)
-                       .listAtMarkerInZone(zone, input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getDiskTypeApiForProject(project).listInZone(zone, options);
             }
          };
       }

@@ -55,7 +55,8 @@ public class ParseRegions extends ParseJson<ListPage<Region>> {
 
             @Override
             public IterableWithMarker<Region> apply(Object input) {
-               return api.getRegionApiForProject(projectName).listAtMarker(input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getRegionApiForProject(projectName).list(options);
             }
          };
       }

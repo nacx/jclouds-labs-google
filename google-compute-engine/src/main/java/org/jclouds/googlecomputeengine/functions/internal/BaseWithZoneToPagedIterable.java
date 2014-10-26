@@ -41,7 +41,7 @@ public abstract class BaseWithZoneToPagedIterable<T, I extends BaseWithZoneToPag
    @Override
    public PagedIterable<T> apply(ListPage<T> input) {
       if (input.nextMarker() == null)
-         return PagedIterables.of(input);
+         return PagedIterables.onlyPage(input);
 
       Optional<Object> project = tryFind(request.getCaller().get().getArgs(), instanceOf(String.class));
 

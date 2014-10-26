@@ -55,7 +55,8 @@ public class ParseGlobalOperations extends ParseJson<ListPage<Operation>> {
 
             @Override
             public IterableWithMarker<Operation> apply(Object input) {
-               return api.getGlobalOperationApiForProject(projectName).listAtMarker(input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getGlobalOperationApiForProject(projectName).list(options);
             }
          };
       }

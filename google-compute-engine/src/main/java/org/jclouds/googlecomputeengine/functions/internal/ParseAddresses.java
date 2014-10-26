@@ -52,14 +52,13 @@ public class ParseAddresses extends ParseJson<ListPage<Address>> {
 
       @Override
       protected Function<Object, IterableWithMarker<Address>> fetchNextPage(final String projectName,
-                                                                            final String regionName,
-                                                                         final ListOptions options) {
+            final String regionName, final ListOptions options) {
          return new Function<Object, IterableWithMarker<Address>>() {
 
             @Override
             public IterableWithMarker<Address> apply(Object input) {
-               return api.getAddressApiForProject(projectName)
-                       .listAtMarkerInRegion(regionName, input.toString(), options);
+               options.pageToken(input.toString());
+               return api.getAddressApiForProject(projectName).listInRegion(regionName, options);
             }
          };
       }
